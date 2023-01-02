@@ -10,6 +10,8 @@ def options():
     Welcome to the GUI interface of the python program
 **************************************************************''')
 
+
+
 class PageContainer(Tk):  
     def __init__(self, *args, **kwargs):  
         # options()
@@ -59,15 +61,21 @@ class PageContainer(Tk):
         saver.grid(column=1,row=1, sticky='nsew')
         
         #This is the frame that shows each club specifically. Only one club at a time
-        current_club = clubs(root,self, None)
-        self.frames[clubs] = current_club
+        current_club = club_frame(root,self, None)
+        self.frames[club_frame] = current_club
         current_club.grid(column=1,row=1, sticky='nsew')
         
+        settings = settings_frame(root,self)
+        self.frames[settings_frame] = settings
+        settings.grid(column=1,row=1, sticky='nsew')
         
         help_frame = start_help_frame(root,self)
         self.frames[start_help_frame] = help_frame
         help_frame.grid(column=1,row=1, sticky='nsew')
         self.show_frame(start_help_frame)
+        
+        
+        
         
         
 
@@ -91,9 +99,11 @@ class PageContainer(Tk):
         frame = self.frames[cont]
         frame.destroy()
         
-        current_club = clubs(root, self, index)
+        current_club = club_frame(root, self, index)
         self.frames[club_menu] = current_club
         current_club.grid(column=1,row=1, sticky='nsew')
+
+
 
 class title(Frame):
     def __init__(self, parent, controller):
@@ -102,6 +112,8 @@ class title(Frame):
         
         title = Label(parent, text=f'{app_title}', relief=RAISED, justify=CENTER, font=Font(self, size=20, weight=BOLD))
         title.grid(column=0, row=0, sticky='nesw', columnspan=2)
+
+
 
 class side_menu(Frame):
     def __init__(self, parent, controller):
@@ -117,11 +129,24 @@ class side_menu(Frame):
                    text='Open Club', 
                    command= lambda: [controller.regen_club_selector(club_menu), controller.show_frame(club_menu)], 
                    width=20).grid(column=0, row=1)
+        ttk.Button(self, 
+                   text='Settings', 
+                   command= lambda: [controller.regen_club_selector(club_menu), controller.show_frame(club_menu)], 
+                   width=20).grid(column=0, row=2)
 
         
         for widget in self.winfo_children():
             widget.grid(padx=5, pady=2)
 
+
+
+class settings_frame(Frame):
+    def __init__(self, parent, controller):
+            #Initialize the frame
+            Frame.__init__(self,parent)
+
+
+       
 class start_help_frame(Frame):
     def __init__(self, parent, controller):
         #Initialize the frame
@@ -147,6 +172,8 @@ Enjoy!
                              justify=CENTER, font=Font(self, size=15))
         description1.grid(column=0, row=1, sticky='nsew')
 
+
+
 class saving(Frame):
     def __init__(self, parent, controller):
         #Initialize the frame
@@ -158,6 +185,8 @@ class saving(Frame):
         keyword = ttk.Entry(self, width=30)
         keyword.focus()
         keyword.grid(column=1, row=0, sticky='ew')
+
+
 
 class new_club_tracker(Frame):
     def __init__(self, parent, controller):
@@ -206,6 +235,8 @@ class new_club_tracker(Frame):
         for widget in self.winfo_children():
             widget.grid(padx=5, pady=2)
 
+
+
 class club_menu(Frame):
     def __init__(self, parent, controller):
         #Initialize the frame
@@ -233,20 +264,32 @@ class club_menu(Frame):
                 col += 1
                 Frame.columnconfigure(self,col,weight=1)
                 row = 0
-            ClubButtonList.append(ttk.Button(self, text=club_names[i], width=40, command= lambda c = i: [controller.regen_current_club(clubs, c)]))
+            ClubButtonList.append(ttk.Button(self, text=club_names[i], width=40, command= lambda c = i: [controller.regen_current_club(club_frame, c)]))
             ClubButtonList[i].grid(column=col, row=row, sticky='nsew', pady=10, padx=20)
             row+=1
 
-class clubs(Frame):
+
+
+class club_frame(Frame):
     def __init__(self, parent, controller, index=None):
         #Initialize the frame
         Frame.__init__(self,parent)
-        clubs_file = open('tracked-clubs.txt', 'r')
-        club_lines = clubs_file.readlines()
-        clubs_file.close()
+        Frame.columnconfigure(self, 0, weight=1)
+        Frame.rowconfigure(self, 0, weight=0)
+        Frame.rowconfigure(self, 1, weight=1)
+        
+
+        #Pull data from tracked-clubs
+        club_names = []
+        with open('tracked-clubs.txt', 'r') as file:
+            for line in file:
+                club_names.append(line.strip().split(',')[1])
+                
         if(index != None):
-            club_id = Label(self, text=f'Club Name: {club_lines[index]}', font=Font(self, size=10))
-            club_id.grid(column=0, row=0, sticky='nw')
+            club_id = Label(self, text=f'Club Name: {club_names[index]}', font=Font(self, size=20), relief=SOLID)
+            club_id.grid(column=0, row=0, sticky='nesw')
+
+
 
 app = PageContainer()
 app.mainloop()
