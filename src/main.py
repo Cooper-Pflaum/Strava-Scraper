@@ -1,6 +1,13 @@
+
+
+
+
+
 from tkinter import *
 from tkinter import ttk
 from tkinter.font import BOLD, Font
+
+import scraper
 
 app_title = 'Strava Scraper'
 
@@ -9,7 +16,6 @@ def options():
 **************************************************************
     Welcome to the GUI interface of the python program
 **************************************************************''')
-
 
 
 class PageContainer(Tk):  
@@ -22,7 +28,6 @@ class PageContainer(Tk):
         global root
         root = Frame(self)  
         root.pack(side='top', fill='both', expand = True )     
-
         self.frames = {}
     
       
@@ -34,25 +39,25 @@ class PageContainer(Tk):
         root.columnconfigure(1, weight=1)      
       
         #Generates the top title bar at the top of the window
-        title_frame = title(root, self)
-        self.frames[title] = title_frame
-        title_frame.grid(column=0, row=0)
-        self.show_frame(title)
+        title = title_frame(root, self)
+        self.frames[title_frame] = title
+        title.grid(column=0, row=0)
+        self.show_frame(title_frame)
         
         #Generates the side menu option for the user to select
-        side_menu_frame = side_menu(root, self)
-        self.frames[side_menu] = side_menu_frame
-        side_menu_frame.grid(column=0, row=1, sticky='ns')
-        self.show_frame(side_menu)
+        side_menu = side_menu_frame(root, self)
+        self.frames[side_menu_frame] = side_menu
+        side_menu.grid(column=0, row=1, sticky='ns')
+        self.show_frame(side_menu_frame)
         
         #Generates the frame that handles all of the data-fields to start tracking a new club
-        club_track = new_club_tracker(root, self)
-        self.frames[new_club_tracker] = club_track
+        club_track = new_club_tracker_frame(root, self)
+        self.frames[new_club_tracker_frame] = club_track
         club_track.grid(column=1,row=1, sticky='nsew')
         
         #Generates the frame that shows all of the available clubs to select from
-        track_menu = club_menu(root, self)
-        self.frames[club_menu] = track_menu
+        track_menu = club_menu_frame(root, self)
+        self.frames[club_menu_frame] = track_menu
         track_menu.grid(column=1,row=1, sticky='nsew')
         
         
@@ -90,8 +95,8 @@ class PageContainer(Tk):
         frame = self.frames[cont]
         frame.destroy()
         
-        track_menu = club_menu(root, self)
-        self.frames[club_menu] = track_menu
+        track_menu = club_menu_frame(root, self)
+        self.frames[club_menu_frame] = track_menu
         track_menu.grid(column=1,row=1, sticky='nsew')
         # self.show_frame(track_menu)
         
@@ -100,12 +105,12 @@ class PageContainer(Tk):
         frame.destroy()
         
         current_club = club_frame(root, self, index)
-        self.frames[club_menu] = current_club
+        self.frames[club_menu_frame] = current_club
         current_club.grid(column=1,row=1, sticky='nsew')
 
 
 
-class title(Frame):
+class title_frame(Frame):
     def __init__(self, parent, controller):
         #Initialize the frame
         Frame.__init__(self,parent)
@@ -115,7 +120,7 @@ class title(Frame):
 
 
 
-class side_menu(Frame):
+class side_menu_frame(Frame):
     def __init__(self, parent, controller):
         #Initialize the frame
         Frame.__init__(self,parent)
@@ -123,15 +128,15 @@ class side_menu(Frame):
 
         ttk.Button(self, 
                    text='New Club Tracker', 
-                   command= lambda: [controller.show_frame(new_club_tracker)], 
+                   command= lambda: [controller.show_frame(new_club_tracker_frame)], 
                    width=20).grid(column=0, row=0)
         ttk.Button(self, 
                    text='Open Club', 
-                   command= lambda: [controller.regen_club_selector(club_menu), controller.show_frame(club_menu)], 
+                   command= lambda: [controller.regen_club_selector(club_menu_frame), controller.show_frame(club_menu_frame)], 
                    width=20).grid(column=0, row=1)
         ttk.Button(self, 
                    text='Settings', 
-                   command= lambda: [controller.regen_club_selector(club_menu), controller.show_frame(club_menu)], 
+                   command= lambda: [controller.regen_club_selector(club_menu_frame), controller.show_frame(club_menu_frame)], 
                    width=20).grid(column=0, row=2)
 
         
@@ -188,7 +193,7 @@ class saving(Frame):
 
 
 
-class new_club_tracker(Frame):
+class new_club_tracker_frame(Frame):
     def __init__(self, parent, controller):
         #Initialize the frame
         Frame.__init__(self,parent)
@@ -237,7 +242,7 @@ class new_club_tracker(Frame):
 
 
 
-class club_menu(Frame):
+class club_menu_frame(Frame):
     def __init__(self, parent, controller):
         #Initialize the frame
         Frame.__init__(self,parent)
@@ -271,26 +276,90 @@ class club_menu(Frame):
 
 
 class club_frame(Frame):
+    data = []
     def __init__(self, parent, controller, index=None):
         #Initialize the frame
         Frame.__init__(self,parent)
-        Frame.columnconfigure(self, 0, weight=1)
+        Frame.columnconfigure(self, 0, weight=0)
+        Frame.columnconfigure(self, 1, weight=0)
+        Frame.columnconfigure(self, 2, weight=0)
+        Frame.columnconfigure(self, 3, weight=2)
         Frame.rowconfigure(self, 0, weight=0)
-        Frame.rowconfigure(self, 1, weight=1)
+        Frame.rowconfigure(self, 1, weight=0)
+        Frame.rowconfigure(self, 2, weight=1)
         
 
         #Pull data from tracked-clubs
         club_names = []
+        club_ids = []
         with open('tracked-clubs.txt', 'r') as file:
             for line in file:
                 club_names.append(line.strip().split(',')[1])
+                club_ids.append(line.strip().split(',')[0])
                 
         if(index != None):
-            club_id = Label(self, text=f'Club Name: {club_names[index]}', font=Font(self, size=20), relief=SOLID)
-            club_id.grid(column=0, row=0, sticky='nesw')
+            club_id = Label(self, text=f'{club_names[index]}', font=Font(self, size=20), relief=RAISED)
+            club_id.grid(column=0, row=0, sticky='nesw', columnspan=5)
+            
+            ath = Label(self, text='Athlete', relief=RAISED, width=20)
+            ath.grid(column=0, row=1, sticky='nesw')
+            
+            dist = Label(self, text='Distances', relief=RAISED, width=15)
+            dist.grid(column=1, row=1, sticky='nesw')
+            
+            runs = Label(self, text='Runs', relief=RAISED, width=10)
+            runs.grid(column=2, row=1, sticky='nesw')
+            
+            stats = Label(self, text='Club Stats', relief=RAISED, width=30)
+            stats.grid(column=3, row=1, sticky='nesw')
+            
+            # l4 = Label(self, text='', relief=RAISED)
+            # l4.grid(column=0, row=2, sticky='nesw')
+            
+            # l5 = Label(self, text='', relief=RAISED)
+            # l5.grid(column=1, row=2, sticky='nesw')
+            
+                        
+            # btn = ttk.Button(self, text='Generate report', command=self.scrape_data(club_ids[index])).grid(column=0,row=3,columnspan=3)
+            data = scraper.get_club_distance(club_ids[index])   
+            data = list(data)
+               
+            total_dist = data[3]
+            
+            del data[3]
+            
+            athletes = data[0]
+            distances = data[1]
+            total_runs = data[2]
+            
+            for i in range(len(athletes)):
+                Frame.rowconfigure(self, i+2, weight=1)
+                
+                
+                athLabel = Label(self, text=athletes[i].title(), relief=RAISED)
+                athLabel.grid(column=0, row=i+2, sticky='nesw')
+                
+                distLabel = Label(self, text=f'{distances[i]}km', relief=RAISED)
+                distLabel.grid(column=1, row=i+2, sticky='nesw')
+                
+                runLabel = Label(self, text=f'{total_runs[i]}', relief=RAISED)
+                runLabel.grid(column=2 ,row=i+2, sticky='nesw')
+                # print(i, athletes[i], distances[i])
 
+            stats_label = Label(self, text=
+f'''Total Distance:             {total_dist}km / {round(total_dist/1.609, 1)}mi
+Total Runs:                 {sum(total_runs)}
+========================================
+Top Runner:                 {athletes[0]}
+Distance:                   {distances[0]}km / {round(distances[0]/1.609, 1)}mi
+Runs:                       {total_runs[0]}
+========================================
+                       ''', anchor='nw', justify=LEFT)
+            
+            stats_label.grid(column=3, row=2, sticky='nesw', rowspan=2+int(len(athletes)/4))
 
-
+            
+            # selected_runner = Label(self, text='Selected Athlete', relief=RAISED).grid(column=3, row=2+int(len(athletes)/4)+1, sticky='nesw')
 app = PageContainer()
 app.mainloop()
 
